@@ -24,7 +24,7 @@ ZSH_THEME="robbyrussell"
 # DISABLE_LS_COLORS="true"
 
 # Uncomment following line if you want to disable autosetting terminal title.
-# DISABLE_AUTO_TITLE="true"
+DISABLE_AUTO_TITLE="true"
 
 # Uncomment following line if you want to disable command autocorrection
 # DISABLE_CORRECTION="true"
@@ -44,6 +44,9 @@ plugins=(git brew lein jira mvn z)
 
 source $ZSH/oh-my-zsh.sh
 
+# https://stackoverflow.com/a/48341347/924604
+PROMPT='%{$fg[yellow]%}[%D{%f/%m/%y} %D{%L:%M:%S}] '$PROMPT
+
 # Customize to your needs...
 # if [ -f `brew --prefix`/etc/bash_completion ]; then
 #     . `brew --prefix`/etc/bash_completion
@@ -51,57 +54,96 @@ source $ZSH/oh-my-zsh.sh
 
 # [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
 
-JAVA_HOME=/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home
-export JAVA_HOME
-export LEIN_JAVA_CMD=$JAVA_HOME/bin/java
-
-function setupjdk6 {
-    export JAVA_HOME=/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home 
-    export LEIN_JAVA_CMD=${JAVA_HOME}/bin/java
+# from http://www.timbabwe.com/2012/05/iterm_tab_and_window_titles_with_zsh/ (experimenting with it still)
+# set tab title to cwd
+precmd () {
+  tab_label=${PWD/${HOME}/\~} # use 'relative' path
+  echo -ne "\e]2;${tab_label}\a" # set window title to full string
+  echo -ne "\e]1;${tab_label: -24}\a" # set tab title to rightmost 24 characters
 }
 
-function setupjdk7 {
-    export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_71.jdk/Contents/Home
-    export LEIN_JAVA_CMD=${JAVA_HOME}/bin/java
+jdk() {
+    version=$1
+    echo "Setting java version ${version}"
+    unset JAVA_HOME
+    home_version="${version}"
+    if [ "1.8" = "${version}" ]; then
+        home_version="8"
+    fi
+    jenv local "${version}"
+    export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-${home_version}.jdk/Contents/Home"
+    export LEIN_JAVA_CMD=$JAVA_HOME/bin/java
+    export PATH="$JAVA_HOME/bin":$PATH;
+    java -version
 }
 
-function setupjdk8 {
-    export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_91.jdk/Contents/Home
-    export LEIN_JAVA_CMD=${JAVA_HOME}/bin/java
-}
+alias jdk8="jdk 1.8"
+alias jdk11="jdk 11"
+alias jdk17="jdk 17"
 
-alias jdk6="setupjdk6"
-alias jdk7="setupjdk7"
-alias jdk8="setupjdk8"
+# Default JDK
+jdk11
 
 alias mvnfast="mvn clean install -DskipTests"
+alias mvnfasto="mvn clean install -DskipTests -o"
 alias mvnshade="mvn clean install -DskipTests -Pshade"
 
-PATH=/usr/local/bin:${PATH}
-PATH=${PATH}:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home
+export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
 
-export HADOOP_PREFIX=/opt/cdh4_mac_bundle/hadoop-2.0.0-cdh4.1.1
-export HADOOP_MAPRED_HOME=/opt/cdh4_mac_bundle/hadoop-2.0.0-mr1-cdh4.1.1
-export HBASE_HOME=/opt/cdh4_mac_bundle/hbase-0.92.1-cdh4.1.1
+# For Java
+eval "$(jenv init -)"
 
-export PATH=$PATH:$HADOOP_PREFIX/bin:$HBASE_HOME/bin
+alias dcomp='docker-compose'
+alias dps='docker-compose ps'
+alias dmach='docker-machine'
 
-alias hadoopstart='$HADOOP_PREFIX/sbin/start-dfs.sh;$HADOOP_MAPRED_HOME/bin/start-mapred.sh'
-alias hadoopstop='$HADOOP_PREFIX/sbin/stop-dfs.sh;$HADOOP_MAPRED_HOME/bin/stop-mapred.sh'
-
-alias hbasestart='$HBASE_HOME/bin/start-hbase.sh'
-alias hbasestop='$HBASE_HOME/bin/stop-hbase.sh'
-
-alias clusterstart='hadoopstart && hbasestart'
-alias clusterstop='hbasestop && hadoopstop'
-
-# I don't think this works... Hmmm, I'll come back to it I guess.
-alias emacs="/usr/local/Cellar/emacs/24.2/Emacs.app/Contents/MacOS/Emacs -nw"
-
-export MAVEN_OPTS="-Xmx1024M -XX:MaxPermSize=512M"
 export JAVA_TOOL_OPTIONS='-Djava.awt.headless=true'
 
-# TODO fix user path when I know one.
-# It seems the `brew` plugin automatically handles pushing brew
-# install paths ahead of root binaries, leaving it for now though.
-export PATH=/usr/local/bin:/usr/local/sbin:~/bin:$PATH:/Users/MR027750/.rvm/gems/ruby-1.9.3-p362/bin:/Users/MR027750/.rvm/gems/ruby-1.9.3-p362@global/bin:/Users/MR027750/.rvm/rubies/ruby-1.9.3-p362/bin:/Users/MR027750/.rvm/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/opt/cdh4_mac_bundle/hadoop-2.0.0-cdh4.1.1/bin:/opt/cdh4_mac_bundle/hbase-0.92.1-cdh4.1.1/bin
+# For Ruby
+
+if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+
+# For Python
+
+eval "$(pyenv init -)"
+if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+
+export PIPX_DEFAULT_PYTHON="$HOME/.pyenv/versions/3.12.4/bin/python"
+
+# For GPG with S3 and Maven
+# gnupg
+# https://github.com/pstadler/keybase-gpg-github/issues/11
+
+# start gpg-agent if not already running
+
+[ -f ~/.gpg-agent-info ] && source ~/.gpg-agent-info
+if [ -S "${GPG_AGENT_INFO%%:*}" ]; then
+    export GPG_AGENT_INFO
+else
+    eval $( gpg-agent --daemon --enable-ssh-support )
+fi
+
+export GPG_AGENT_INFO
+export GPG_TTY=$(tty)
+
+# For fun
+
+alias weather='curl wttr.in'
+
+# Chrome cmd line
+
+alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+
+eval "$(direnv hook zsh)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "/usr/local/opt/nvm/nvm.sh" ] && \. "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+#nvm install 18 --latest-npm
+nvm use 18
+
+alias lzd='lazydocker'
+
+# Created by `pipx` on 2024-07-22 03:09:49
+export PATH="$PATH:/Users/mikerod/.local/bin"
