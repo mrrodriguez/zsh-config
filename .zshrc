@@ -38,7 +38,7 @@ ZSH_THEME="robbyrussell"
 # DISABLE_LS_COLORS="true"
 
 # Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
+DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
 # ENABLE_CORRECTION="true"
@@ -103,8 +103,36 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# This customizes the iTerm title bar to show useful info for in context of the
+# tab showing in the terminal.
+precmd() {
+    local max_length=25  # Max length for the tab title
+    local truncated_path
+    local current_path="$PWD"
+    local ending
+    local beginning
+    local remaining_length
 
-alias dmach='docker-machine'
+    # Check if the path exceeds the max length
+    if [[ ${#current_path} -gt $max_length ]]; then
+        ending=$(basename "$current_path")
+        truncated_path="../${ending}"
+    else
+        # If the path is short enough, use the full path
+        truncated_path="$current_path"
+    fi
+
+    # Window title
+    print -Pn "\e]2;%n %~ ($(uname -m))\a"
+    # Tab title
+    print -Pn "\e]1;$truncated_path ($(uname -m))\a"
+}
+
+# Toggles for using arm64 vs x86_64 homebrew.
+alias zarm='arch -arm64 /usr/bin/env zsh'
+alias zros='arch -x86_64 /usr/bin/env zsh'
+alias brow='arch --x86_64 /usr/local/Homebrew/bin/brew'
+alias ib='PATH=/usr/local/bin'
 
 # For Java
  
@@ -138,15 +166,29 @@ eval "$(jenv init -)"
 
 # For Ruby
 
-if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+if [[ $(uname -m) == "x86_64" ]]; then
+    # Homebrew environment for x86
+    alias brew='arch -x86_64 /usr/local/bin/brew'
+    export PATH="/usr/local/bin:$PATH"
+    export RBENV_ROOT="${HOME}/.rbenv_x86"
+
+    # Initialize rbenv for x86
+    if command -v rbenv &> /dev/null; then
+        eval "$(rbenv init -)"
+    fi
+    rbenv global 3.2.0
+else
+    export PATH="$HOME/.rbenv/bin:$PATH"
+    if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+    rbenv global 3.2.0
+fi
 
 # For Python
 
 eval "$(pyenv init -)"
 if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
 
-export PIPX_DEFAULT_PYTHON="$HOME/.pyenv/versions/3.12.4/bin/python"
-
+export PIPX_DEFAULT_PYTHON="$HOME/.pyenv/versions/3.13.0/bin/python"
 
 # For fun
 
@@ -169,4 +211,3 @@ export NVM_DIR="$HOME/.nvm"
 
 #nvm install 18 --latest-npm
 nvm use 18
-
