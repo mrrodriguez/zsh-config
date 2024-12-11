@@ -128,13 +128,61 @@ precmd() {
 }
 
 # Toggles for using arm64 vs x86_64 homebrew.
-alias zarm='arch -arm64 /usr/bin/env zsh'
-alias zros='arch -x86_64 /usr/bin/env zsh'
-alias brow='arch --x86_64 /usr/local/Homebrew/bin/brew'
+current_arch() { 
+    echo "Current arch: $(uname -m)"
+    echo "ARCH env var: ${ARCH:-NONE}"
+}
+
+switch_arch() {
+    local new_arch=$1
+    if [[ "$new_arch" != "arm64" && "$new_arch" != "x86_64" ]]; then
+        echo "Invalid architecture. Use 'arm64' or 'x86_64'"
+        return 1
+    fi
+
+    # Set the ARCH environment variable
+    export ARCH=$new_arch
+    
+    # Only switch if we're not already on the desired architecture
+    if [[ "$(uname -m)" != "$new_arch" ]]; then
+        echo "Switching to new arch: ${ARCH}"
+        # Use arch -x86_64 or arch -arm64 to execute subsequent commands
+        if [[ "$new_arch" == "x86_64" ]]; then
+            # Switch to x86_64 architecture
+            exec arch -x86_64 /bin/zsh
+        else
+            # Switch to arm64 architecture
+            exec arch -arm64 /bin/zsh
+        fi
+    fi
+}
+
+# Initial architecture setup - runs when shell starts
+initial_arch_setup() {
+    # If ARCH is set (like from VSCode), switch to that architecture
+    if [[ -n "$ARCH" ]]; then
+        switch_arch "$ARCH"
+    fi
+}
+
+# Run the initial setup
+initial_arch_setup
+
+alias zarm='ARCH=arm64 initial_arch_setup'
+alias zros='ARCH=x86_64 initial_arch_setup'
+alias brow='arch -x86_64 /usr/local/Homebrew/bin/brew'
 alias ib='PATH=/usr/local/bin'
 
+if [[ "$(uname -m)" == "arm64" ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+    alias brew='arch -x86_64 /usr/local/bin/brew'
+    export PATH="/usr/local/bin:$PATH"
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 # For Java
- 
+
 export JAVA_TOOL_OPTIONS='-Djava.awt.headless=true'
 
 jdk() {
@@ -165,19 +213,18 @@ jdk21
 
 # For Ruby
 
-if [[ $(uname -m) == "x86_64" ]]; then
-    # Homebrew environment for x86
-    alias brew='arch -x86_64 /usr/local/bin/brew'
-    export PATH="/usr/local/bin:$PATH"
+if [[ $(uname -m) == "arm64" ]]; then
+    echo "Using rbenv with arm64"
+    export RBENV_ROOT="${HOME}/.rbenv"
+
+    if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+    rbenv global 3.2.0
+
+else
+    echo "Using brew/rbenv with x86_64"
     export RBENV_ROOT="${HOME}/.rbenv_x86"
 
     # Initialize rbenv for x86
-    if command -v rbenv &> /dev/null; then
-        eval "$(rbenv init -)"
-    fi
-    rbenv global 3.2.0
-else
-    export PATH="$HOME/.rbenv/bin:$PATH"
     if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
     rbenv global 3.2.0
 fi
