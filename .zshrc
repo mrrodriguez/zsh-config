@@ -70,7 +70,7 @@ DISABLE_AUTO_TITLE="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git zsh-vi-mode)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -106,26 +106,25 @@ source $ZSH/oh-my-zsh.sh
 # This customizes the iTerm title bar to show useful info for in context of the
 # tab showing in the terminal.
 precmd() {
-    local max_length=25  # Max length for the tab title
-    local truncated_path
-    local current_path="$PWD"
-    local ending
-    local beginning
-    local remaining_length
+  local max_length=25  # Max total length for the tab title
+  local prefix=".."    # Prefix to indicate truncation
+  local prefix_length=${#prefix}
+  local allowed_length=$((max_length - prefix_length))  # Remaining length for the path
+  local truncated_path
+  local current_path="$PWD"
 
-    # Check if the path exceeds the max length
-    if [[ ${#current_path} -gt $max_length ]]; then
-        ending=$(basename "$current_path")
-        truncated_path="../${ending}"
-    else
-        # If the path is short enough, use the full path
-        truncated_path="$current_path"
-    fi
+  # Check if the path exceeds the max length
+  if [[ ${#current_path} -gt $max_length ]]; then
+    # Extract the last allowed_length characters from the path
+    truncated_path="${prefix}${current_path: -$allowed_length}"
+  else
+    # If the path is short enough, use it as-is
+    truncated_path="$current_path"
+  fi
 
-    # Window title
-    print -Pn "\e]2;%n %~ ($(uname -m))\a"
-    # Tab title
-    print -Pn "\e]1;$truncated_path ($(uname -m))\a"
+  # Set the iTerm2 tab and window titles, respectively.
+  print -Pn "\e]1;$truncated_path ($(uname -m))\a"
+  print -Pn "\e]2;%n@%m: $truncated_path ($(uname -m))\a"
 }
 
 # Toggles for using arm64 vs x86_64 homebrew.
@@ -159,10 +158,10 @@ alias jdk11="jdk 11"
 alias jdk17="jdk 17"
 alias jdk21="jdk 21"
 
+eval "$(jenv init -)"
+
 # Default JDK
 jdk21
-
-eval "$(jenv init -)"
 
 # For Ruby
 
