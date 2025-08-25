@@ -248,6 +248,37 @@ eval "$(direnv hook zsh)"
 
 alias lzd='lazydocker'
 
+# git helpers
+
+function git_pull_all() {
+  local dirs=(
+    "$HOME/Projects/splash/moai"
+    "$HOME/Projects/splash/turbo"
+    "$HOME/Projects/splash/Website"
+    "$HOME/Projects/splash/stonehenge"
+  )
+
+  local original_dir="$PWD"
+
+  for dir in "${dirs[@]}"; do
+    if [ -d "$dir/.git" ]; then
+      echo "Pulling in $dir..."
+      cd "$dir" && git pull
+    else
+      echo "Skipping $dir (not a git repo)"
+    fi
+  done
+
+  cd "$original_dir"
+}
+
+# For Splash
+
+alias website-test="docker exec -t app php artisan test"
+alias prod-search='rg -i -g "!{test_resources,*_test.clj}"'
+alias gpa='git_pull_all'
+
+
 # Created by `pipx` on 2024-07-22 03:09:49
 export PATH="$PATH:/Users/mikerod/.local/bin"
 
@@ -255,5 +286,27 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
-#nvm install 18 --latest-npm
-nvm use 18
+#nvm install 20 --latest-npm
+nvm use 20
+
+alias pm="pnpm"
+
+# Created by `pipx` on 2025-02-07 19:21:46
+export PATH="$PATH:/Users/mrodriguez/.local/bin"
+
+# Via `brew install libpq`
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+
+# Claude context
+alias pr-review='~/claude-dotfiles/pr-review.clj'
+alias jira-save='~/claude-dotfiles/jira-save'
+
+# Ensure plugins (like vi-mode) reload correctly when `source` is used.
+# Use exec zsh to avoid zsh-vi-mode reload issues
+reload_zsh() {
+  local current_dir="$PWD"
+  echo "Reloading zsh (current directory: $current_dir)"
+  cd "$current_dir" && exec zsh
+}
+
+alias reload='reload_zsh'
