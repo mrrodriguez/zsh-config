@@ -234,6 +234,8 @@ fi
 eval "$(pyenv init -)"
 if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
 
+# Set consistent Python version for pyenv and pipx
+pyenv global 3.13.0
 export PIPX_DEFAULT_PYTHON="$HOME/.pyenv/versions/3.13.0/bin/python"
 
 # For fun
