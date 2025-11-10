@@ -125,6 +125,9 @@ precmd() {
   # Set the iTerm2 tab and window titles, respectively.
   print -Pn "\e]1;$truncated_path ($(uname -m))\a"
   print -Pn "\e]2;%n@%m: $truncated_path ($(uname -m))\a"
+ 
+  # Visual separator (works well with light themes)
+  print -P "%F{240}$(printf '%.0s─' {1..${COLUMNS:-80}})%f"
 }
 
 # Toggles for using arm64 vs x86_64 homebrew.
@@ -193,11 +196,12 @@ jdk() {
     if [ "1.8" = "${version}" ]; then
         home_version="8"
     fi
-    export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-${home_version}.jdk/Contents/Home"
-    jenv add "${JAVA_HOME}" 
+    java_home="/Library/Java/JavaVirtualMachines/temurin-${home_version}.jdk/Contents/Home"
+    #export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-${home_version}.jdk/Contents/Home"
+    jenv add "${java_home}" 
     jenv local "${version}"
-    export LEIN_JAVA_CMD=$JAVA_HOME/bin/java
-    export PATH="$JAVA_HOME/bin":$PATH;
+    export LEIN_JAVA_CMD=$java_home/bin/java
+    #export PATH="$JAVA_HOME/bin":$PATH;
     java -version
 }
 
@@ -207,6 +211,7 @@ alias jdk17="jdk 17"
 alias jdk21="jdk 21"
 
 eval "$(jenv init -)"
+jenv enable-plugin export
 
 # Default JDK
 jdk21
@@ -278,6 +283,7 @@ function git_pull_all() {
 
 alias website-test="docker exec -t app php artisan test"
 alias prod-search='rg -i -g "!{test_resources,*_test.clj}"'
+alias test-search='rg -i -g "{**/test/**,**/test_resources/**,**/*_test.clj}"'
 alias gpa='git_pull_all'
 
 
