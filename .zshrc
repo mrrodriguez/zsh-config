@@ -254,6 +254,7 @@ alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 eval "$(direnv hook zsh)"
 
 alias lzd='lazydocker'
+alias lg='lazygit'
 
 # git helpers
 
@@ -308,6 +309,26 @@ export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 # Claude context
 alias pr-review='~/claude-dotfiles/pr-review.clj'
 alias jira-save='~/claude-dotfiles/jira-save'
+
+## logseq search (from claude)
+#
+# lq + rg nested search
+lq-nested() {
+  lq q content-search -g logseq "$1" -C | rg -i "$2" -B 3 -A 2
+}
+# Usage: lq-nested "DirectPay" "lib"
+
+# lq search with context
+lq-ctx() {
+  lq q content-search -g logseq "$1" -C -t
+}
+# Usage: lq-ctx "DirectPay"
+
+# Count occurrences across nested blocks
+lq-count() {
+  lq q content-search -g logseq "$1" -C | rg -i "$2" -c
+}
+# Usage: lq-count "POA" "encryption"
 
 # Ensure plugins (like vi-mode) reload correctly when `source` is used.
 # Use exec zsh to avoid zsh-vi-mode reload issues
