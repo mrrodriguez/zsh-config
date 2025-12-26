@@ -106,7 +106,7 @@ source $ZSH/oh-my-zsh.sh
 # This customizes the iTerm title bar to show useful info for in context of the
 # tab showing in the terminal.
 precmd() {
-  local max_length=25  # Max total length for the tab title
+  local max_length=100  # Max total length for the tab title
   local prefix=".."    # Prefix to indicate truncation
   local prefix_length=${#prefix}
   local allowed_length=$((max_length - prefix_length))  # Remaining length for the path
@@ -124,7 +124,7 @@ precmd() {
 
   # Set the iTerm2 tab and window titles, respectively.
   print -Pn "\e]1;$truncated_path ($(uname -m))\a"
-  print -Pn "\e]2;%n@%m: $truncated_path ($(uname -m))\a"
+  print -Pn "\e]2;$truncated_path ($(uname -m))\a"
  
   # Visual separator (works well with light themes)
   print -P "%F{240}$(printf '%.0s─' {1..${COLUMNS:-80}})%f"
