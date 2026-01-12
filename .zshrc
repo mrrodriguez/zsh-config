@@ -123,7 +123,10 @@ precmd() {
   fi
 
   # Set the iTerm2 tab and window titles, respectively.
-  print -Pn "\e]1;$truncated_path ($(uname -m))\a"
+  # Tab title: show just current directory name (most distinctive part)
+  local tab_title="${PWD:t}"
+
+  print -Pn "\e]1;$tab_title\a"
   print -Pn "\e]2;$truncated_path ($(uname -m))\a"
  
   # Visual separator (works well with light themes)
