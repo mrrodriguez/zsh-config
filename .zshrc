@@ -299,7 +299,15 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
 #nvm install 20 --latest-npm
+#nvm install 22
 nvm use 20
+
+# qmd requires node 22, run it under that without changing default
+qmd() {
+    nvm exec 22 qmd "$@"
+}
+
+alias qmd-refresh='qmd update && qmd embed'
 
 alias pm="pnpm"
 
